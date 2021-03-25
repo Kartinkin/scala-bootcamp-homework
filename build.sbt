@@ -3,9 +3,11 @@ lazy val root = (project in file("."))
   .settings(
     inThisBuild(List(
       organization := "com.example",
-      scalaVersion := "2.13.3"
+      scalaVersion := "2.13.3",
     )),
-    name := "bootcamp-homework"
+    name := "bootcamp-homework",
+    coverageEnabled := true,
+    coverageExcludedPackages := "com.evolutiongaming.bootcamp.[^t].*",
   )
   .dependsOn(bulkySourcesPlugin)
   .enablePlugins(BulkySourcesPlugin)
@@ -29,7 +31,8 @@ libraryDependencies ++= Seq(
   "io.circe" %% "circe-parser" % circeVersion,
   "org.scalaj" %% "scalaj-http" % "2.4.2" % Test,
   "io.chrisdavenport" %% "cats-scalacheck" % catsScalacheckVersion % Test,
-  "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test)
+  "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test,
+)
 
 scalacOptions ++= Seq(
   "-Ymacro-annotations"
