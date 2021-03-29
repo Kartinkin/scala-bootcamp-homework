@@ -18,8 +18,7 @@ class ErrorHandlingHWSpec
   "PaymentCard" should "handle valid and invalid cards" in {
     import ValidationError._
 
-    PaymentCardValidator
-    .validate(
+    PaymentCard(
       name = "Kirill Kartinkin",
       number = "4321123443211234",
       expirationDate = "10/2020",
@@ -39,8 +38,7 @@ class ErrorHandlingHWSpec
       securityCode: String,
       errors: Set[ValidationError]
     ): Assertion =
-      PaymentCardValidator
-      .validate(name, number, expirationDate, securityCode)
+      PaymentCard(name, number, expirationDate, securityCode)
       .leftMap(_.toList.toSet) shouldBe errors.invalid
 
     checkInvalid(

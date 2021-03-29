@@ -17,13 +17,40 @@ object PaymentCardHW {
   final case class CardNumber(v: String) extends AnyVal
   final case class ExpirationDate(v: YearMonth) extends AnyVal
   final case class CVVNumber(v: String) extends AnyVal
+  type AllErrorsOr[A] = ValidatedNec[ValidationError, A]
 
-  final case class PaymentCard(
+  final case class PaymentCard private(
     owner: OwnerName,
     cardNumber: CardNumber,
     expirationDate: ExpirationDate,
     cvvNumber: CVVNumber
   )
+
+  object PaymentCard {
+    import PaymentCardValidator._
+    def apply(name: String,
+              number: String,
+              expirationDate: String,
+              securityCode: String): AllErrorsOr[PaymentCard] =
+      validate(name, number, expirationDate, securityCode)
+
+    def validate(
+      name: String,
+      number: String,
+      expirationDate: String,
+      securityCode: String,
+    ): AllErrorsOr[PaymentCard] =
+    (
+      validateOwnerName(name),
+      validateCardNumber(number),
+      validateExpirationDate(expirationDate),
+      validateSecurityCode(securityCode)
+    // ).mapN(PaymentCard)
+    ).mapN  {
+      case (validatedName, validatedNumber, validatedExpirationDate, validatedSecurityCode) =>
+        new PaymentCard(validatedName, validatedNumber, validatedExpirationDate, validatedSecurityCode)
+    }
+  }
 
   sealed trait ValidationError
   object ValidationError {
@@ -50,16 +77,14 @@ object PaymentCardHW {
   object PaymentCardValidator {
     import ValidationError._
 
-    type AllErrorsOr[A] = ValidatedNec[ValidationError, A]
-
-    private def validateOwnerName(name: String): AllErrorsOr[OwnerName] = {
+    def validateOwnerName(name: String): AllErrorsOr[OwnerName] = {
       def validateNameRegEx: AllErrorsOr[OwnerName] =
         Validated.condNec(name.matches("^[a-zA-Z ]{3,30}$"), OwnerName(name), OwnernameIsInvalid)
 
       validateNameRegEx
     }
 
-    private def validateCardNumber(number: String): AllErrorsOr[CardNumber] = {
+    def validateCardNumber(number: String): AllErrorsOr[CardNumber] = {
       def validateCardIssuer: AllErrorsOr[CardNumber] =
         Validated.condNec(number.matches("^4.*"), CardNumber(number), UnknownIssuer)
 
@@ -72,7 +97,7 @@ object PaymentCardHW {
       validateCardIssuer productR validateCardNumberRegEx productR validateCardNumberChecksum
     }
 
-    private def validateExpirationDate(date: String): AllErrorsOr[ExpirationDate] = {
+    def validateExpirationDate(date: String): AllErrorsOr[ExpirationDate] = {
       def validateYearMonthParser: AllErrorsOr[ExpirationDate] =
         Try(YearMonth.parse(date, DateTimeFormatter.ofPattern("MM/yyyy")))
         .toOption
@@ -82,24 +107,11 @@ object PaymentCardHW {
       validateYearMonthParser
     }
 
-    private def validateSecurityCode(securityCode: String): AllErrorsOr[CVVNumber] = {
+    def validateSecurityCode(securityCode: String): AllErrorsOr[CVVNumber] = {
       def validateSecurityCodeRegEx: AllErrorsOr[CVVNumber] =
         Validated.condNec(securityCode.matches("^[0-9]{3}$"), CVVNumber(securityCode), SecurityCodeIsInvalid)
 
       validateSecurityCodeRegEx
     }
-
-    def validate(
-      name: String,
-      number: String,
-      expirationDate: String,
-      securityCode: String,
-    ): AllErrorsOr[PaymentCard] =
-    (
-      validateOwnerName(name),
-      validateCardNumber(number),
-      validateExpirationDate(expirationDate),
-      validateSecurityCode(securityCode)
-    ).mapN(PaymentCard)
   }
 }
